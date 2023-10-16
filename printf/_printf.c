@@ -2,67 +2,115 @@
 
 void print_buffer(char buffer[], int *buff_ind);
 
+/* Define constants for flags */
+#define FLAG_MINUS   (1 << 0)
+#define FLAG_PLUS    (1 << 1)
+#define FLAG_SPACE   (1 << 2)
+#define FLAG_ZERO    (1 << 3)
+#define FLAG_HASH    (1 << 4)
+
 /**
- * _printf - Printf function
- * @format: format.
- * Return: Printed chars.
+ * get_flags - Extract flags from the format string.
+ * @format: format string.
+ * @i: current position in the format string.
+ * Returns: A bitmask representing the flags.
  */
-int _printf(const char *format, ...)
+int get_flags(const char *format, int *i)
 {
-	int i, printed = 0, printed_chars = 0;
-	int flags, width, precision, size, buff_ind = 0;
-	va_list list;
-	char buffer[BUFF_SIZE];
+    int flags = 0;
 
-	if (format == NULL)
-		return (-1);
+    while (format[*i] == '-' || format[*i] == '+' || format[*i] == ' ' ||
+           format[*i] == '0' || format[*i] == '#') {
+        if (format[*i] == '-')
+            flags |= FLAG_MINUS;
+        else if (format[*i] == '+')
+            flags |= FLAG_PLUS;
+        else if (format[*i] == ' ')
+            flags |= FLAG_SPACE;
+        else if (format[*i] == '0')
+            flags |= FLAG_ZERO;
+        else if (format[*i] == '#')
+            flags |= FLAG_HASH;
 
-	va_start(list, format);
+        (*i)++;
+    }
 
-	for (i = 0; format && format[i] != '\0'; i++)
-	{
-		if (format[i] != '%')
-		{
-			buffer[buff_ind++] = format[i];
-			if (buff_ind == BUFF_SIZE)
-				print_buffer(buffer, &buff_ind);
-			/* write(1, &format[i], 1);*/
-			printed_chars++;
-		}
-		else
-		{
-			print_buffer(buffer, &buff_ind);
-			flags = get_flags(format, &i);
-			width = get_width(format, &i, list);
-			precision = get_precision(format, &i, list);
-			size = get_size(format, &i);
-			++i;
-			printed = handle_print(format, &i, list, buffer,
-				flags, width, precision, size);
-			if (printed == -1)
-				return (-1);
-			printed_chars += printed;
-		}
-	}
-
-	print_buffer(buffer, &buff_ind);
-
-	va_end(list);
-
-	return (printed_chars);
+    return flags;
 }
 
 /**
- * print_buffer - Prints the contents of the buffer if it exist
- * @buffer: Array of chars
- * @buff_ind: Index at which to add next char, represents the length.
+ * get_width - Extract width from the format string.
+ * @format: format string.
+ * @i: current position in the format string.
+ * @list: va_list for variable arguments.
+ * Returns: The width as an integer.
  */
-void print_buffer(char buffer[], int *buff_ind)
+int get_width(const char *format, int *i, va_list list)
 {
-	if (*buff_ind > 0)
-		write(1, &buffer[0], *buff_ind);
+    int width = 0;
 
-	*buff_ind = 0;
+    if (format[*i] == '*') {
+        width = va_arg(list, int);
+        (*i)++;
+    } else {
+        while (format[*i] >= '0' && format[*i] <= '9') {
+            width = width * 10 + (format[*i] - '0');
+            (*i)++;
+        }
+    }
+
+    return width;
 }
 
+/**
+ * get_precision - Extract precision from the format string.
+ * @format: format string.
+ * @i: current position in the format string.
+ * @list: va_list for variable arguments.
+ * Returns: The precision as an integer.
+ */
+int get_precision(const char *format, int *i, va_list list)
+{
+    int precision = -1; /* Initialize to -1 to distinguish between no precision and precision of 0. */
+
+    if (format[*i] == '.') {
+        (*i)++;
+        if (format[*i] == '*') {
+            precision = va_arg(list, int);
+            (*i)++;
+        } else {
+            precision = 0;
+            while (format[*i] >= '0' && format[*i] <= '9') {
+                precision = precision * 10 + (format[*i] - '0');
+                (*i)++;
+            }
+        }
+    }
+
+    return precision;
+}
+
+/**
+ * get_size - Extract size from the format string.
+ * @format: format string.
+ * @i: current position in the format string.
+ * Returns: The size as an integer.
+ */
+int get_size(const char *format, int *i)
+{
+    int size = 0;
+
+    while (format[*i] == 'h' || format[*i] == 'l') {
+        if (format[*i] == 'h')
+            size++;
+        else if (format[*i] == 'l')
+            size++;
+
+        (*i)++;
+    }
+
+    return size;
+}
+
+/* Rest of your _printf code... */
 
