@@ -1,3 +1,4 @@
-erver with servername pointing to localhost
-echo "ServerName localhost" >> /etc/apache2/apache2.conf
-service apache2 start
+#!/usr/bin/env bash
+# Paste the command(s) you used to fix the issue in your answer file.
+echo "Hello Holberton" > /var/www/html/index.html
+service apache2 restart
